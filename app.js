@@ -5,7 +5,7 @@ const port = 3000;
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
-// app.use(express.static(__dirname + ''));
+app.use(express.static('views'));
 
 // Initialize session
 app.use(session({
@@ -21,7 +21,11 @@ const users = [
 ];
 
 app.get('/',(req, res) => {
-    res.render('login', { errorMessage: '' });
+    if (req.session.user) {
+        res.render('home');
+    } else {
+        res.render('login', { errorMessage: '' });
+    }
 });
 
 app.post('/login', (req, res) => {
