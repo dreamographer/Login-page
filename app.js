@@ -3,6 +3,7 @@ const session = require('express-session');
 const app = express();
 const port = 3000;
 
+
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('views'));
@@ -11,30 +12,37 @@ app.use(express.static('views'));
 app.use(session({
     secret: 'your-secret-key',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        maxAge: 60 * 60 * 1000 // Set the cookie to expire in 30 days
+    }
 }));
 
-// Simulated user data (for demo purposes)
+
+// Simulated user data 
 const users = [
     { username: 'user', password: 'pass' },
-    { username: 'user2', password: 'password2' }
+    { username: 'user2', password: 'pass2' }
 ];
 
-app.get('/',(req, res) => {
+
+function authenticate(req, res, next) {
     if (req.session.user) {
-        res.render('home');
+        next(); // User is authenticated, continue to the next middleware or route
     } else {
         res.render('login', { errorMessage: '' });
     }
-});
+}
+
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-
+    
     // Simulated login logic (for demo purposes)
     const user = users.find(user => user.username === username && user.password === password);
     if (user) {
         req.session.user = user;
+        console.log(username+" logged in");
         res.redirect('/home');
     } else {
         // Pass an error message to the login view
@@ -42,21 +50,23 @@ app.post('/login', (req, res) => {
     }
 });
 
-
-
-app.get('/home', (req, res) => {
-    if (req.session.user) {
-        res.render('home');
-    } else {
-        res.redirect('/');
-    }
+app.get('/',authenticate,(req, res) => {
+    res.render('home');
 });
 
-app.get('/logout', (req, res) => {
+app.get('/home', authenticate,(req, res) => {
+        res.render('home');
+});
+
+app.get('/logout',authenticate, (req, res) => {
+    console.log(`${req.session.user.username} logged out`);
     req.session.destroy(); // Destroy session on logout
     res.redirect('/');
 });
-
+app.get('*', (req, res) => {
+    res.status(404).send('404'); // Render a custom 404 page
+});
 app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`);
 });
+
